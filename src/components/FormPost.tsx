@@ -1,5 +1,8 @@
 "use client";
 import { FormInputPost } from "@/types";
+import { Tag } from "@prisma/client";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { FC } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 
@@ -10,6 +13,17 @@ interface FormPostProps {
 
 const FormPost: FC<FormPostProps> = ({ submit, isEditing }) => {
   const { register, handleSubmit } = useForm<FormInputPost>();
+
+  //fetch tags list
+  const { data: dataTags, isLoading: isLoadingTags } = useQuery<Tag[]>({
+    queryKey: ["tags"],
+    queryFn: async () => {
+      const response = await axios.get("/api/tags");
+      return response.data;
+    },
+  });
+
+  // console.log(dataTags);
 
   return (
     <form
@@ -27,18 +41,24 @@ const FormPost: FC<FormPostProps> = ({ submit, isEditing }) => {
         className="textarea textarea-bordered w-full max-w-lg"
         placeholder="Post Content"
       ></textarea>
-      <select
-        {...register("tag", { required: true })}
-        className="select select-bordered w-full max-w-lg"
-        defaultValue={""}
-      >
-        <option disabled value="">
-          Select Tags
-        </option>
-        <option>JavaScript</option>
-        <option>C#</option>
-        <option>PHP</option>
-      </select>
+      {isLoadingTags ? (
+        "loading..."
+      ) : (
+        <select
+          {...register("tag", { required: true })}
+          className="select select-bordered w-full max-w-lg"
+          defaultValue={""}
+        >
+          <option disabled value="">
+            Select Tags
+          </option>
+          {dataTags?.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      )}
 
       <button type="submit" className="btn btn-primary w-full max-w-lg">
         {isEditing ? "Update" : "Create"}
